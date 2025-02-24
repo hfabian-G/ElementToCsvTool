@@ -23,18 +23,8 @@ function extractImportantElements() {
     } else if (element.className && typeof element.className === 'string' && element.className.trim() !== '') {
       return { type: 'class', value: element.className.trim() };
     } else {
-      // Create an XPath as a fallback
-      let xpath = '';
-      for (let elem = element; elem && elem.nodeType === 1; elem = elem.parentNode) {
-        let idx = 1;
-        for (let sibling = elem.previousSibling; sibling; sibling = sibling.previousSibling) {
-          if (sibling.nodeType === 1 && sibling.tagName === elem.tagName) {
-            idx++;
-          }
-        }
-        xpath = `/${elem.tagName.toLowerCase()}[${idx}]${xpath}`;
-      }
-      return { type: 'xpath', value: xpath };
+      // No valid identifier available
+      return { type: 'none', value: 'no-id-or-class' };
     }
   }
 
@@ -212,9 +202,12 @@ function extractImportantElements() {
     }
   });
 
+  // Filter out elements with no valid identifier
+  const validElementsData = elementsData.filter(item => item.selector_type !== 'none');
+  
   // Convert data to CSV
   let csv = 'Element Type,Text Content,Selector Type,Selector Value\n';
-  elementsData.forEach(item => {
+  validElementsData.forEach(item => {
     // Escape commas and quotes in fields
     const elementType = `"${item.element_type.replace(/"/g, '""')}"`;
     const textContent = `"${item.text_content.replace(/"/g, '""')}"`;
@@ -240,7 +233,9 @@ function extractImportantElements() {
   link.click();
   document.body.removeChild(link);
   
-  console.log(`Extracted ${elementsData.length} elements and downloaded as ${filename}`);
+  console.log(`Extracted ${validElementsData.length} elements with ID or class and downloaded as ${filename}`);
+  console.log(`(Skipped ${elementsData.length - validElementsData.length} elements that had no ID or class)`);
+
   return elementsData;
 }
 
